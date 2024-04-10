@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import csv
@@ -17,13 +17,13 @@ class SensorData(db.Model):
     value =db.Column(db.Float(10,2), nullable=False)
 
 
-@app.route('/', methods= ['GET'])
-def health_check():
-     return jsonify({'message': 'Online!'}), 200 
+@app.route('/')
+def index():
+     return render_template('index.html')
 
 
 #endpoint to send sensor data for storage
-@app.route('/send_sensor_data', methods= ['POST'])
+@app.route('/sensor_data', methods= ['POST'])
 def get_sensor_data():
     data = request.json
     new_data = SensorData(
@@ -38,7 +38,7 @@ def get_sensor_data():
     return jsonify({'message': 'Sensor data stored with success!'}), 200
 
 #endpoint to get average value in specific period of time
-@app.route('/get_avg_value', methods=['GET'])
+@app.route('/avg_value', methods=['GET'])
 def avg_value():
     equipment_id = request.args.get('equipmentId')
     period = request.args.get('period')
@@ -58,8 +58,16 @@ def avg_value():
     result = round(req_data, 2)
     return jsonify({'avg_value': result}), 200
 
+#endpoint to get average value in specific period of time
+@app.route('/equipments', methods=['GET'])
+def equipments():
+
+    equipment_ids = db.session.query(SensorData.equipmentId).distinct().all()
+    equipment_ids = [result[0] for result in equipment_ids]
+    return jsonify({'equipment_ids': equipment_ids}), 200
+
 #endpoint to post CSV file with sensor data
-@app.route('/post_sensor_data_csv', methods=['POST'])
+@app.route('/sensor_data_csv', methods=['POST'])
 def post_csv():
     csv_file = request.files['file']
     csv_file.save(csv_file.filename)
@@ -76,6 +84,7 @@ def post_csv():
             db.session.commit()
     
     return jsonify({'message': 'CSV data stored with success!'}), 200
+
 
 if __name__ == '__main__':
     with app.app_context():
