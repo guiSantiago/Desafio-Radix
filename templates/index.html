@@ -65,8 +65,8 @@
             const dataset =[{
                 label: `${equipmentId}`,
                 data: values,
-                borderColor: 'rgb(178, 79, 236)', // Cor da borda
-                backgroundColor: 'rgb(208, 156, 237)', // Cor de fundo
+                borderColor: 'rgb(178, 79, 236)', 
+                backgroundColor: 'rgb(208, 156, 237)', 
                 borderWidth: 1
             }]
 
@@ -116,8 +116,8 @@
     const myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [], // Serão adicionados depois
-            datasets: [] // Serão adicionados depois
+            labels: [], 
+            datasets: [] 
         },
         options: {
             scales: {
@@ -128,7 +128,7 @@
         }
     });
 
-    // Atualiza o gráfico com os dados fornecidos
+    
     function updateChart(labels, datasets) {
         myChart.data.labels = labels;
         myChart.data.datasets = datasets;
