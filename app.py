@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import csv
+from operator import itemgetter
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sensors.db'
@@ -95,6 +96,9 @@ def get_all_equipments():
             'timestamp': sensor.timestamp,
             'value': sensor.value
         })
+    #sort the values by timestamp
+    for equip_id, values in data.items():
+        data[equip_id] = sorted(values, key=itemgetter('timestamp'))
     return jsonify(data)
 
 

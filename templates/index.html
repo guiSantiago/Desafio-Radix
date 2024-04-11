@@ -30,27 +30,29 @@
         </div>
     </div>
     <div class="flex-container-bottom-row">
-        <canvas id="myChart"></canvas>
+        <canvas id="eqChart"></canvas>
+        <!-- <canvas id="allChart"></canvas> -->
     </div>
 </div>
 <script>
+    //function to get list of equipments and display then as buttons in the "Equipments" section
     async function getEquipments() {
         const URL = "http://127.0.0.1:5000/equipments"
         const result = await fetch(URL)
         result.json().then(data => {
-            console.log(data)
+            // console.log(data)
             $('#equipmentList').empty(); 
         
             $('#equipmentList').append('<ul>');
             data.equipment_ids.forEach(function(equipmentId) {
                 $('#equipmentList').append(`<button id="listButton" value= ${equipmentId} onclick = "getValues(value)">` + equipmentId + '</button>');
-                // $('#equipmentList').append(`<button id="listButton" value=${equipmentId} onclick = "console.log(value)">` + equipmentId + '</button>');
             });
             $('#equipmentList').append('</ul>');
         })
     } 
 
-    async function getAllEquipments(equipmentId) {
+     //function to get specific equipment, with their values and timestamps, to fill the chart
+    async function getSpecEquipment(equipmentId) {
         const URL = "http://127.0.0.1:5000/all_equipments"
         try {
             const response = await fetch(URL);
@@ -58,27 +60,83 @@
             var timestamps = [];
             var values = [];
             for (let i in data[`${equipmentId}`]) {
-                timestamps.push(data[`${equipmentId}`][i]["timestamp"])
-                values.push(parseFloat(data[`${equipmentId}`][i]["value"]))
+                timestamps.push(data[`${equipmentId}`][i]["timestamp"]);
+                values.push(parseFloat(data[`${equipmentId}`][i]["value"]));
             }
 
             const dataset =[{
                 label: `${equipmentId}`,
                 data: values,
-                borderColor: 'rgb(178, 79, 236)', // Cor da borda
-                backgroundColor: 'rgb(208, 156, 237)', // Cor de fundo
+                borderColor: 'rgb(178, 79, 236)', 
+                backgroundColor: 'rgb(208, 156, 237)', 
                 borderWidth: 1
             }]
 
             const labels = timestamps.map(timestamp => new Date(timestamp).toLocaleString());
 
-            updateChart(labels, dataset)
+            updateEqChart(labels, dataset)
             
         } catch (error) {
          console.error(error);
         }
     } 
 
+    // (still in progress) function to get all the equipments, values and timestamps and display them in the same chart for comparison
+    // problem: timestamps are wrong in the chart's label
+    // async function getAllEquipments() {
+    //     const URL_all_eq = "http://127.0.0.1:5000/all_equipments"
+    //     const URL_eqs = "http://127.0.0.1:5000/equipments"
+
+    //     try {
+    //         const response_eqs = await fetch(URL_eqs);
+    //         const data_eqs = await response_eqs.json();
+            
+    //         function randomInteger(max) {
+    //             return Math.floor(Math.random()*(max + 1));
+    //         }
+
+    //         function randomRgbColor() {
+    //             let r = randomInteger(255);
+    //             let g = randomInteger(255);
+    //             let b = randomInteger(255);
+    //             return [r,g,b];
+    //         }
+    //         var rgb_list = [];
+    //         for(let k in data_eqs["equipment_ids"]) {
+    //             rgb_list.push(randomRgbColor())
+    //         }            
+
+    //         const response_all_eq = await fetch(URL_all_eq);
+    //         const data_all = await response_all_eq.json();
+    //         var timestamps = [];
+    //         var datasets = [];
+    //         for (let j in data_eqs["equipment_ids"]) {
+    //             var values = [];
+    //             for (let i in data_all[data_eqs["equipment_ids"][j]]) {
+    //                 timestamps.push(data_all[data_eqs["equipment_ids"][j]][i]["timestamp"]);
+    //                 values.push(parseFloat(data_all[data_eqs["equipment_ids"][j]][i]["value"]));
+                    
+    //                 const dataset ={
+    //                     label: data_eqs["equipment_ids"][j],
+    //                     data: values,
+    //                     borderColor: `rgb(${rgb_list[j][0]},${rgb_list[j][1]},${rgb_list[j][2]})`, 
+    //                     backgroundColor: `rgba(${rgb_list[j][0]},${rgb_list[j][1]},${rgb_list[j][2]},0.7)`, 
+    //                     borderWidth: 1
+    //                 }
+    //                 datasets.push(dataset);
+                    
+    //             }
+    //         }
+            
+    //         const labels = timestamps.map(timestamp => new Date(timestamp).toLocaleString());
+    //         updateAllChart(labels, datasets)
+            
+    //     } catch (error) {
+    //      console.error(error);
+    //     }
+    // } 
+
+    //get the avg value and show to the user. if it dont exist in the specified period of time, show error
     async function getAverageValue(equipmentId) {
         const URL = "http://127.0.0.1:5000/avg_value";
         const period = $('#periodDropdown').val();
@@ -91,7 +149,7 @@
                 throw new Error(response.statusText);
             }
         const data = await response.json();
-        console.log(data);
+        // console.log(data);
         
         $('#averageValue').text('Average value (' + equipmentId +'): ' + data.avg_value);
         } catch (error) {
@@ -99,42 +157,68 @@
          $('#averageValue').text('Error (' + equipmentId +'): No data in selected period');
         }
     }
-
+    
+    //get values and refresh page informations
     function getValues(equipmentId){
-        getAllEquipments(equipmentId);
+        getSpecEquipment(equipmentId);
         getAverageValue(equipmentId);
     }
 
-
+    // load equipment list as soon as the page loads
     $(document).ready(function() {
         getEquipments();
         getAllEquipments();
     });
 </script>
 <script>
-    const ctx = document.getElementById('myChart').getContext('2d');
-    const myChart = new Chart(ctx, {
+    const ctx = document.getElementById('eqChart').getContext('2d');
+    const eqChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [], // Serão adicionados depois
-            datasets: [] // Serão adicionados depois
+            labels: [], 
+            datasets: [] 
         },
         options: {
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: false
                 }
             }
         }
     });
 
-    // Atualiza o gráfico com os dados fornecidos
-    function updateChart(labels, datasets) {
-        myChart.data.labels = labels;
-        myChart.data.datasets = datasets;
-        myChart.update();
+   
+    function updateEqChart(labels, datasets) {
+        eqChart.data.labels = labels;
+        eqChart.data.datasets = datasets;
+        eqChart.update();
     }
 
 </script>
+<!-- <script>
+    const ctxall = document.getElementById('allChart').getContext('2d');
+    const allChart = new Chart(ctxall, {
+        type: 'line',
+        data: {
+            labels: [], 
+            datasets: [] 
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+
+    
+    function updateAllChart(labels, datasets) {
+        allChart.data.labels = labels;
+        allChart.data.datasets = datasets;
+        allChart.update();
+    }
+
+</script> -->
 </body>
 </html>
