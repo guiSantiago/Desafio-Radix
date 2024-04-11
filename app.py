@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import csv
-import sqlite3
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sensors.db'
@@ -84,6 +83,19 @@ def post_csv():
             db.session.commit()
     
     return jsonify({'message': 'CSV data stored with success!'}), 200
+
+@app.route('/all_equipments', methods=['GET'])
+def get_all_equipments():
+    sensor_data = SensorData.query.all()
+    data = {}
+    for sensor in sensor_data:
+        if sensor.equipmentId not in data:
+            data[sensor.equipmentId] = []
+        data[sensor.equipmentId].append({
+            'timestamp': sensor.timestamp,
+            'value': sensor.value
+        })
+    return jsonify(data)
 
 
 if __name__ == '__main__':

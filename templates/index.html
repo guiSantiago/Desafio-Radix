@@ -3,32 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Charts</title>
+    <title>Chart</title>
     <link rel="stylesheet" href="/static/css/styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-<h1 class = "title"> Sensor Charts</h1>
-<div class="flex-container">
-    <div class="topRight">
-        <h2>Equipments</h2>
-        <p id="equipmentList">Loading Equipments ...</p>
-        <p id="averageValue">Average value: </p>
+<h1 class = "title"> Sensor Chart</h1>
+<div  class="flex-container-main-column">
+    <div class="flex-container-top-row">
+        <div class="topLeft">
+            <h2>Equipments</h2>
+            <button id="refreshButton" onclick = "getEquipments()">Refresh</button>
+            <p id="equipmentList">Loading Equipments ...</p>
+            <p id="averageValue">Average value: </p>
+        </div>
+        <div class="topRight">
+            <p>Select period:</p>
+            <select id="periodDropdown">
+                <option value="24h">24h</option>
+                <option value="48h">48h</option>
+                <option value="1w">1 week</option>
+                <option value="1m">1 month</option>
+            </select>
+        </div>
     </div>
-    <div class="topLeft">
-        <p>Select period:</p>
-        <select id="periodDropdown">
-            <option value="24h">24h</option>
-            <option value="48h">48h</option>
-            <option value="1w">1 week</option>
-            <option value="1m">1 month</option>
-        </select>
+    <div class="flex-container-bottom-row">
+        <canvas id="myChart"></canvas>
     </div>
 </div>
-
 <script>
-
     async function getEquipments() {
         const URL = "http://127.0.0.1:5000/equipments"
         const result = await fetch(URL)
@@ -38,11 +43,40 @@
         
             $('#equipmentList').append('<ul>');
             data.equipment_ids.forEach(function(equipmentId) {
-                $('#equipmentList').append(`<button id="listButton" value= ${equipmentId} onclick = "getAverageValue(value)">` + equipmentId + '</button>');
+                $('#equipmentList').append(`<button id="listButton" value= ${equipmentId} onclick = "getValues(value)">` + equipmentId + '</button>');
                 // $('#equipmentList').append(`<button id="listButton" value=${equipmentId} onclick = "console.log(value)">` + equipmentId + '</button>');
             });
             $('#equipmentList').append('</ul>');
         })
+    } 
+
+    async function getAllEquipments(equipmentId) {
+        const URL = "http://127.0.0.1:5000/all_equipments"
+        try {
+            const response = await fetch(URL);
+            const data = await response.json();
+            var timestamps = [];
+            var values = [];
+            for (let i in data[`${equipmentId}`]) {
+                timestamps.push(data[`${equipmentId}`][i]["timestamp"])
+                values.push(parseFloat(data[`${equipmentId}`][i]["value"]))
+            }
+
+            const dataset =[{
+                label: `${equipmentId}`,
+                data: values,
+                borderColor: 'rgb(178, 79, 236)', // Cor da borda
+                backgroundColor: 'rgb(208, 156, 237)', // Cor de fundo
+                borderWidth: 1
+            }]
+
+            const labels = timestamps.map(timestamp => new Date(timestamp).toLocaleString());
+
+            updateChart(labels, dataset)
+            
+        } catch (error) {
+         console.error(error);
+        }
     } 
 
     async function getAverageValue(equipmentId) {
@@ -54,7 +88,7 @@
         try {
             const response = await fetch(`${URL}?${queryString}`);
             if (!response.ok) {
-                throw new Error('Error: ' + response.statusText);
+                throw new Error(response.statusText);
             }
         const data = await response.json();
         console.log(data);
@@ -64,15 +98,43 @@
          console.error(error);
          $('#averageValue').text('Error (' + equipmentId +'): No data in selected period');
         }
-
-      
-        
     }
-    
+
+    function getValues(equipmentId){
+        getAllEquipments(equipmentId);
+        getAverageValue(equipmentId);
+    }
+
 
     $(document).ready(function() {
         getEquipments();
+        getAllEquipments();
     });
+</script>
+<script>
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], // Serão adicionados depois
+            datasets: [] // Serão adicionados depois
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Atualiza o gráfico com os dados fornecidos
+    function updateChart(labels, datasets) {
+        myChart.data.labels = labels;
+        myChart.data.datasets = datasets;
+        myChart.update();
+    }
+
 </script>
 </body>
 </html>
