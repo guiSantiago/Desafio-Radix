@@ -50,7 +50,7 @@ The project consists on creating a simple back/front-end infrastructure to recei
   <h3>Installation and Usage</h3>
   <ul>
   <li>Clone the project repository to your local machine</li>
-  <li>Install the Python dependencies listed in the requirements.txt file using pip3 (Command: pip3 install requirements.txt</li>
+  <li>Install the Python dependencies listed in the requirements.txt file using pip3 (Command: pip3 install requirements.txt)</li>
   <li>Run the Flask server using the python app.py command</li>
   <li>Access the application in your browser at http://localhost:5000</li>
   <li>Insert data sending requests from Insomnia or other method of your preference</li>
